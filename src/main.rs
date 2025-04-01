@@ -5,21 +5,32 @@
 */
 use chrono::{Local, Datelike};
 use std::collections::HashMap;
-type CategoryFunction = fn() -> String;
+type CategoryFunction = Box<dyn Fn() -> String>; //this should not work wtf
 
 fn main() {
+    // Global variables (should not need to change)
     let categories = vec!["Uptime", "Language"];  
     let big_categories = vec!["Host", "Contact", "Stats"];
     let line_length = 60;
 
+    // Variables that should change
+    let user = "romain";
+    let host = "denis";
+    
     let mut function_map: HashMap<&str, CategoryFunction> = HashMap::new();
-    function_map.insert("Uptime", get_uptime as CategoryFunction);
-    function_map.insert("Host", get_host as CategoryFunction);  
+    function_map.insert("Uptime", Box::new(get_uptime)); 
+    function_map.insert("Host", Box::new({
+        let user = user.to_string();
+        let host = host.to_string();
+        move || get_host(&user, &host) 
+    }));
 
     let all_categories = categories.iter().chain(big_categories.iter());
 
     for category in all_categories {
-        let value = function_map.get(*category).map_or("Unknown".to_string(), |f| f());
+        let value = function_map
+            .get(*category)
+            .map_or("Unknown".to_string(), |f| f());
 
         let formatted_category = format_category(line_length, category, &big_categories, &value);
 
@@ -58,15 +69,15 @@ fn format_category(line_length: usize, category: &str, big_categories: &[&str], 
 
 fn get_uptime() -> String{
     let now = Local::now();
-    let user: Vec<(&str, &str)> = vec![
+    let user_birthdate: Vec<(&str, &str)> = vec![
         ("year", "2006"),
         ("month", "12"),
         ("day", "11"),
     ];
 
-    let user_year: i32 = user.iter().find(|&&(k, _)| k == "year").unwrap().1.parse().unwrap();
-    let user_month: u32 = user.iter().find(|&&(k, _)| k == "month").unwrap().1.parse().unwrap();
-    let user_day: u32 = user.iter().find(|&&(k, _)| k == "day").unwrap().1.parse().unwrap();
+    let user_year: i32 = user_birthdate.iter().find(|&&(k, _)| k == "year").unwrap().1.parse().unwrap();
+    let user_month: u32 = user_birthdate.iter().find(|&&(k, _)| k == "month").unwrap().1.parse().unwrap();
+    let user_day: u32 = user_birthdate.iter().find(|&&(k, _)| k == "day").unwrap().1.parse().unwrap();
 
 
     let year_diff = now.year() - user_year;
@@ -91,9 +102,7 @@ fn get_uptime() -> String{
     uptime
 }
 
-//this is such bad code but i want a function for each for clarity
-fn get_host() -> String {
-    let user = "Romain";
-    let host = "git";
+//this is such bad code but i want a function for each line for clarity
+fn get_host(user: &str, host: &str) -> String {
     format!("{}@{}", user, host)
 }
