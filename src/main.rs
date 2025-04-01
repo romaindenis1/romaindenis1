@@ -1,7 +1,7 @@
 /*
 // This code is not perfect, it is a project to learn Rust and there are more efficient ways to do this
 // You can probaly do this code with half the lines in python
-// The end result should look somewhat like a neofetch
+// The end result should look somewhat like a neofetch (eventually)
 */
 use chrono::{Local, Datelike};
 use std::collections::HashMap;
@@ -39,53 +39,59 @@ fn get_uptime() -> String{
     };
     let uptime = format!("{} years, {} months, {} days", year_diff, month_diff, day_diff);
     
-    println!("{}", uptime);
+    uptime
 }
 
-fn get_host() {
+fn get_host() -> String {
     let user = "Romain";
     let host = "git";
-    println!("{}@{}", user, host);
+    format!("{}@{}", user, host)
 }
 
-fn format_category(line_length: usize, category: &str, big_categories: &[&str]) -> String {
-
+fn format_category(line_length: usize, category: &str, big_categories: &[&str], value: &str) -> String {
     let is_big = big_categories.contains(&category);
     let mut output = String::from(category);
-    
+
+    // Add the separator based on the category type
     if is_big {
         output.push(' ');
-        while output.len() < line_length {
-            output.push('-');
-        }
     } else {
         output.push(':');
-        while output.len() < line_length {
-            output.push('.');
-        }
     }
-    
+
+    let value_length = value.len();
+
+    // Calculate the remaining length for separators
+    let used_length = output.len() + value_length;  
+    let remaining_length = line_length - used_length;  
+
+    if is_big {
+        output.push_str(value);
+        output.push(' ');  
+        output.push_str(&"-".repeat(remaining_length));
+    } else {
+        output.push_str(&".".repeat(remaining_length));
+        output.push_str(value);
+    }
+
     output
 }
-
 fn main() {
-    let _ = get_host();
-    let line_length = 60;
-    let categories = vec!["Uptime", "Lang"];
+    let categories = vec!["Uptime", "Lang", "Host"];  
     let big_categories = vec!["Host", "Contact", "Stats"];
+    let line_length = 60;
 
     let mut function_map: HashMap<&str, CategoryFunction> = HashMap::new();
-    function_map.insert("Uptime", get_uptime);
-    //function_map.insert("Lang", get_lang);
-    
-    let all_categories = categories.iter().chain(big_categories.iter());
-    
-    for category in all_categories {
-        let formatted_category = format_category(line_length, category, &big_categories);
-        let value = function_map.get(category).map_or("Unknown".to_string(), |f| f());
-        println!("{} {}", formatted_category, value);
-    }
-    //let _ = get_contact();
-    let _ = get_uptime();
+    function_map.insert("Uptime", get_uptime as CategoryFunction);
+    function_map.insert("Host", get_host as CategoryFunction);  
 
+    let all_categories = categories.iter().chain(big_categories.iter());
+
+    for category in all_categories {
+        let value = function_map.get(*category).map_or("Unknown".to_string(), |f| f());
+
+        let formatted_category = format_category(line_length, category, &big_categories, &value);
+
+        println!("{}", formatted_category);
+    }
 }
