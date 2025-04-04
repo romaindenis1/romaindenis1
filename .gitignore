@@ -4,3 +4,6 @@ target/
 **/*.rs.bk
 *.pdb
 *.lock
+output.txt
+config.yaml
+*.jpeg
