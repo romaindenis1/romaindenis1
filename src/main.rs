@@ -5,9 +5,12 @@
 */
 use chrono::{Local, Datelike};
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::Write;
 type CategoryFunction = Box<dyn Fn() -> String>; //this should not work wtf
 
 fn main() {
+    image_to_ascii("C:/Users/ps04egl/Documents/GitHub/romaindenis1/xioajie.jpeg");
     // Global variables (should not need to change)
     let categories = vec!["Uptime", "Language"];  
     let big_categories = vec!["Host", "Contact", "Stats"];
@@ -105,4 +108,38 @@ fn get_uptime() -> String{
 //this is such bad code but i want a function for each line for clarity
 fn get_host(user: &str, host: &str) -> String {
     format!("{}@{}", user, host)
+}
+
+fn image_to_ascii(image_path: &str) {
+    use image::{GenericImageView, imageops::FilterType};
+
+    // Open the image
+    let img = image::open(image_path).unwrap().to_luma8();
+
+    // Resize the image (really bad)
+    // First number is width, second number is height
+    // TODO: make this better
+    let resized_img = image::imageops::resize(&img, 80, 40, FilterType::Nearest);
+
+    let (width, height) = resized_img.dimensions();
+    let ascii_chars = ['@', '#', '8', '&', 'o', ':', '*', '.', ' ', 'x', 'X', '%', '=', '+'];
+
+
+    // Create or overwrite the output file
+    let mut file = File::create("output.txt").expect("Creation doesnt work u idiot lol");
+
+    for y in 0..height {
+        let mut line = String::new();
+        for x in 0..width {
+            let pixel = resized_img.get_pixel(x, y)[0] as f32;
+            // I had this at 255.0 and everything i saw was using 255.0 but i increased it and it was better lol
+            // Surely this won't lead to problems in the future
+            let idx = (pixel / 512.0 * (ascii_chars.len() as f32 - 1.0)) as usize;
+            line.push(ascii_chars[idx]);
+        }
+        line.push('\n');
+        file.write_all(line.as_bytes()).expect("Write doesnt work u idiot lol");
+    }
+
+    println!("ASCII art has been saved");
 }
