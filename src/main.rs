@@ -4,45 +4,88 @@
 // The end result should look somewhat like a neofetch (eventually)
 */
 use chrono::{Local, Datelike};
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
+
 type CategoryFunction = Box<dyn Fn() -> String>; //this should not work wtf
 
-fn main() {
-    image_to_ascii("C:/Users/ps04egl/Documents/GitHub/romaindenis1/xioajie.jpeg");
-    // Global variables (should not need to change)
-    let categories = vec!["Uptime", "Language"];  
-    let big_categories = vec!["Host", "Contact", "Stats"];
-    let line_length = 60;
+#[derive(Deserialize)]
+struct Config {
+    image_path: String,
+    output_file: String,
+    resize_width: u32,
+    resize_height: u32,
+    ascii_chars: String,
+    categories: Vec<String>,
+    big_categories: Vec<String>,
+    line_length: usize,
+    user: String,
+    host: String,
+    user_birthdate: Birthdate,
+}
 
-    // Variables that should change
-    let user = "romain";
-    let host = "denis";
-    
+#[derive(Deserialize)]
+struct Birthdate {
+    year: i32,
+    month: u32,
+    day: u32,
+}
+
+fn main() {
+    // Load config hopefully
+    let config: Config = load_config("config.yaml");
+
+    image_to_ascii(
+        &config.image_path,
+        &config.output_file,
+        config.resize_width,
+        config.resize_height,
+        &config.ascii_chars,
+    );
+
     let mut function_map: HashMap<&str, CategoryFunction> = HashMap::new();
-    function_map.insert("Uptime", Box::new(get_uptime)); 
+    function_map.insert("Uptime", Box::new(move || get_uptime(&config.user_birthdate))); //This line took an hour of my life :)
     function_map.insert("Host", Box::new({
-        let user = user.to_string();
-        let host = host.to_string();
-        move || get_host(&user, &host) 
+        let user = config.user.clone();
+        let host = config.host.clone();
+        move || get_host(&user, &host)
     }));
 
-    let all_categories = categories.iter().chain(big_categories.iter());
+    let all_categories = config
+        .categories
+        .iter()
+        .chain(config.big_categories.iter());
 
     for category in all_categories {
         let value = function_map
-            .get(*category)
+            .get(category.as_str())
             .map_or("Unknown".to_string(), |f| f());
 
-        let formatted_category = format_category(line_length, category, &big_categories, &value);
+        let formatted_category = format_category(
+            config.line_length,
+            category,
+            &config.big_categories,
+            &value,
+        );
 
         println!("{}", formatted_category);
     }
 }
 
-fn format_category(line_length: usize, category: &str, big_categories: &[&str], value: &str) -> String {
-    let is_big = big_categories.contains(&category);
+fn load_config(path: &str) -> Config {
+    let file = File::open(path).expect("Failed to open config.yaml");
+    serde_yaml::from_reader(file).expect("Failed to parse config.yaml")
+}
+
+fn format_category(
+    line_length: usize,
+    category: &str,
+    big_categories: &[String],
+    value: &str,
+) -> String {
+    let is_big = big_categories.contains(&category.to_string());
     let mut output = String::from(category);
 
     // Add the separator based on the category type
@@ -70,22 +113,12 @@ fn format_category(line_length: usize, category: &str, big_categories: &[&str], 
     output
 }
 
-fn get_uptime() -> String{
+fn get_uptime(birthdate: &Birthdate) -> String {
     let now = Local::now();
-    let user_birthdate: Vec<(&str, &str)> = vec![
-        ("year", "2006"),
-        ("month", "12"),
-        ("day", "11"),
-    ];
 
-    let user_year: i32 = user_birthdate.iter().find(|&&(k, _)| k == "year").unwrap().1.parse().unwrap();
-    let user_month: u32 = user_birthdate.iter().find(|&&(k, _)| k == "month").unwrap().1.parse().unwrap();
-    let user_day: u32 = user_birthdate.iter().find(|&&(k, _)| k == "day").unwrap().1.parse().unwrap();
-
-
-    let year_diff = now.year() - user_year;
-    let month_diff = now.month() as i32 - user_month as i32;
-    let day_diff = now.day() as i32 - user_day as i32;
+    let year_diff = now.year() - birthdate.year;
+    let month_diff = now.month() as i32 - birthdate.month as i32;
+    let day_diff = now.day() as i32 - birthdate.day as i32;
 
     // Ajust month and year difference if negative
     let (year_diff, month_diff) = if month_diff < 0 || (month_diff == 0 && day_diff < 0) {
@@ -100,18 +133,22 @@ fn get_uptime() -> String{
     } else {
         day_diff
     };
-    let uptime = format!("{} years, {} months, {} days", year_diff, month_diff, day_diff);
-    
-    uptime
-}
 
-//this is such bad code but i want a function for each line for clarity
+    format!("{} years, {} months, {} days", year_diff, month_diff, day_diff)
+}
+//this is such bad code but i want a function for each line for clarity for now
 fn get_host(user: &str, host: &str) -> String {
     format!("{}@{}", user, host)
 }
 
-fn image_to_ascii(image_path: &str) {
-    use image::{GenericImageView, imageops::FilterType};
+fn image_to_ascii(
+    image_path: &str,
+    output_file: &str,
+    resize_width: u32,
+    resize_height: u32,
+    ascii_chars: &str,
+) {
+    use image::{imageops::FilterType};
 
     // Open the image
     let img = image::open(image_path).unwrap().to_luma8();
@@ -119,14 +156,13 @@ fn image_to_ascii(image_path: &str) {
     // Resize the image (really bad)
     // First number is width, second number is height
     // TODO: make this better
-    let resized_img = image::imageops::resize(&img, 80, 40, FilterType::Nearest);
+    let resized_img = image::imageops::resize(&img, resize_width, resize_height, FilterType::Nearest);
 
     let (width, height) = resized_img.dimensions();
-    let ascii_chars = ['@', '#', '8', '&', 'o', ':', '*', '.', ' ', 'x', 'X', '%', '=', '+'];
-
+    let ascii_chars: Vec<char> = ascii_chars.chars().collect();
 
     // Create or overwrite the output file
-    let mut file = File::create("output.txt").expect("Creation doesnt work u idiot lol");
+    let mut file = File::create(output_file).expect("Creation doesnt work u idiot lol");
 
     for y in 0..height {
         let mut line = String::new();
@@ -138,8 +174,8 @@ fn image_to_ascii(image_path: &str) {
             line.push(ascii_chars[idx]);
         }
         line.push('\n');
-        file.write_all(line.as_bytes()).expect("Write doesnt work u idiot lol");
+        file.write_all(line.as_bytes()).expect("Unable to write to file");
     }
 
-    println!("ASCII art has been saved");
+    println!("ASCII art has been saved to {}", output_file);
 }

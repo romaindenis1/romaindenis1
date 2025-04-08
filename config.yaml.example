@@ -1,0 +1,23 @@
+# Rename this file to config.yaml and fill in the values
+
+image_path: ""
+output_file: "" # "output.txt" this probably will not be used in the future
+
+resize_width: # 80 is good
+resize_height: # 40 is good
+line_length: # 60 is good
+
+ascii_chars: "" # @#8&o:* .xX%=+ if you dont know
+categories:
+  - ""
+  - ""
+big_categories:
+  - ""
+  - ""
+  - ""
+user: ""
+host: ""
+user_birthdate:
+  year:
+  month:
+  day:
