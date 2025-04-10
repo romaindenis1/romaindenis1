@@ -8,6 +8,9 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
+use svg::node::element::{Text, Rectangle};
+use svg::node::element::SVG;
+use svg::Document;
 
 type CategoryFunction = Box<dyn Fn() -> String>; //this should not work wtf
 
@@ -164,6 +167,8 @@ fn image_to_ascii(
     // Create or overwrite the output file
     let mut file = File::create(output_file).expect("Creation doesnt work u idiot lol");
 
+    let mut ascii_art = String::new();
+
     for y in 0..height {
         let mut line = String::new();
         for x in 0..width {
@@ -174,8 +179,31 @@ fn image_to_ascii(
             line.push(ascii_chars[idx]);
         }
         line.push('\n');
+        ascii_art.push_str(&line);
         file.write_all(line.as_bytes()).expect("Unable to write to file");
     }
+    save_svg(&ascii_art);
+}
 
-    println!("ASCII art has been saved to {}", output_file);
+fn save_svg(image: &str) {
+    let background = Rectangle::new()
+        .set("width", 300)
+        .set("height", 100)
+        .set("fill", "white");
+
+    let text = Text::new()
+        .set("x", 20)
+        .set("y", 60)
+        .set("font-family", "Verdana")
+        .set("font-size", 24)
+        .set("fill", "black")
+        .add(svg::node::Text::new(image));
+
+    let document = Document::new()
+        .set("viewBox", (0, 0, 300, 100))
+        .add(background)
+        .add(text);
+
+    svg::save("output.svg", &document).unwrap();
+    println!("Saved variable to output.svg!");
 }
