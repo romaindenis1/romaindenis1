@@ -7,3 +7,4 @@ target/
 output.txt
 config.yaml
 *.jpeg
+*.svg
