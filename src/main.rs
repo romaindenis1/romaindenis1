@@ -186,21 +186,40 @@ fn image_to_ascii(
 }
 
 fn save_svg(image: &str) {
+    //Escape characters in the input string
+    let escaped_image = image
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("\"", "&quot;")
+        .replace("'", "&apos;");
+
     let background = Rectangle::new()
-        .set("width", 300)
-        .set("height", 100)
+        .set("width", 1920)
+        .set("height", 980)
         .set("fill", "white");
 
-    let text = Text::new()
+    //Get each line of image
+    let lines: Vec<&str> = escaped_image.split('\n').collect();
+
+    //Group of <tspan> (\n equivalent for .svg files) elements for each line
+    let mut text = Text::new()
         .set("x", 20)
-        .set("y", 60)
+        .set("y", 20)
         .set("font-family", "Verdana")
-        .set("font-size", 24)
-        .set("fill", "black")
-        .add(svg::node::Text::new(image));
+        .set("font-size", 12)
+        .set("fill", "black");
+
+    for (i, line) in lines.iter().enumerate() {
+        let tspan = svg::node::element::TSpan::new()
+            .add(svg::node::Text::new(line.to_string()))
+            .set("x", 20) //Reset x
+            .set("dy", if i == 0 { 0 } else { 15 }); //Vertical spacing
+        text = text.add(tspan);
+    }
 
     let document = Document::new()
-        .set("viewBox", (0, 0, 300, 100))
+        .set("viewBox", (0, 0, 1920, 980))
         .add(background)
         .add(text);
 
