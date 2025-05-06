@@ -209,6 +209,7 @@ fn save_svg(image: &str) {
         .set("font-family", "Verdana")
         .set("font-size", 12)
         .set("fill", "black");
+        .set("xml:space", "preserve");
 
     for (i, line) in lines.iter().enumerate() {
         let tspan = svg::node::element::TSpan::new()
