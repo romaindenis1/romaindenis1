@@ -9,7 +9,6 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
 use svg::node::element::{Text, Rectangle};
-use svg::node::element::SVG;
 use svg::Document;
 
 type CategoryFunction = Box<dyn Fn() -> String>; //this should not work wtf
