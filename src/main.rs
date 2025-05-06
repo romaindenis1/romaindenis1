@@ -209,13 +209,16 @@ fn save_svg(image: &str) {
         .set("font-family", "Verdana")
         .set("font-size", 12)
         .set("fill", "black");
+        .set("font-family", "monospace")
+        .set("font-size", 10)
+        .set("fill", "black")
         .set("xml:space", "preserve");
 
     for (i, line) in lines.iter().enumerate() {
         let tspan = svg::node::element::TSpan::new()
             .add(svg::node::Text::new(line.to_string()))
             .set("x", 20) //Reset x
-            .set("dy", if i == 0 { 0 } else { 15 }); //Vertical spacing
+            .set("dy", if i == 0 { 0 } else { 10 }); //Vertical spacing
         text = text.add(tspan);
     }
 
