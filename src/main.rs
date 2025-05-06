@@ -206,9 +206,6 @@ fn save_svg(image: &str) {
     let mut text = Text::new()
         .set("x", 20)
         .set("y", 20)
-        .set("font-family", "Verdana")
-        .set("font-size", 12)
-        .set("fill", "black");
         .set("font-family", "monospace")
         .set("font-size", 10)
         .set("fill", "black")
