@@ -17,4 +17,17 @@ Here are some ideas to get you started:
 - 📫 How to reach me: ...
 - 😄 Pronouns: ...
 - ⚡ Fun fact: ...
+
+Reviving this project; TODO:
+
+Git api integration (git actions to regenerate project every day)
+Repo stats (number of repos, followers, contributions, ect)
+Last commit
+Pinned repos (maybe, not sure yet because you can pin repos straight in github)
+Countdowns (to some release, birthday or something)
+Real error handling
+
+Super endgame
+Language support (?IDKXD)
+
 -->
